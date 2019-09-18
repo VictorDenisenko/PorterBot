@@ -1,7 +1,5 @@
-// <snippet_using>
 using Microsoft.Azure.CognitiveServices.Vision.Face;
 using Microsoft.Azure.CognitiveServices.Vision.Face.Models;
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,35 +9,20 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-// </snippet_using>
 
 namespace FaceTutorial
 {
     public partial class MainWindow : Window
     {
-        // <snippet_mainwindow_fields>
-        // Add your Face subscription key to your environment variables.
         private const string subscriptionKey = "62897d6b94e24c1d877f17b4ab17e066";
-        // Add your Face endpoint to your environment variables.
         private const string faceEndpoint = "https://vic.cognitiveservices.azure.com/";
 
-        private readonly IFaceClient faceClient = new FaceClient(
-            new ApiKeyServiceClientCredentials(subscriptionKey),
-            new System.Net.Http.DelegatingHandler[] { });
-
-        // The list of detected faces.
+        private readonly IFaceClient faceClient = new FaceClient(new ApiKeyServiceClientCredentials(subscriptionKey),new System.Net.Http.DelegatingHandler[] { });
         private IList<DetectedFace> faceList;
-        // The list of descriptions for the detected faces.
         private string[] faceDescriptions;
-        // The resize factor for the displayed image.
         private double resizeFactor;
+        private const string defaultStatusBarText = "Place the mouse pointer over a face to see the face description.";
 
-        private const string defaultStatusBarText =
-            "Place the mouse pointer over a face to see the face description.";
-        // </snippet_mainwindow_fields>
-
-
-        // <snippet_mainwindow_constructor>
         public MainWindow()
         {
             InitializeComponent();
