@@ -10,35 +10,78 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace FaceTutorial
+namespace PorterBot
 {
     public partial class MainWindow : Window
     {
         private const string subscriptionKey = "62897d6b94e24c1d877f17b4ab17e066";
         private const string faceEndpoint = "https://vic.cognitiveservices.azure.com/";
-
-        private readonly IFaceClient faceClient = new FaceClient(new ApiKeyServiceClientCredentials(subscriptionKey),new System.Net.Http.DelegatingHandler[] { });
+        private readonly IFaceClient faceClient = new FaceClient(new ApiKeyServiceClientCredentials(subscriptionKey), new System.Net.Http.DelegatingHandler[] { });
         private IList<DetectedFace> faceList;
         private string[] faceDescriptions;
         private double resizeFactor;
-        private const string defaultStatusBarText = "Place the mouse pointer over a face to see the face description.";
+        private const string defaultStatusBarText = "";
+        const string personGroupId = "rldastaffid";
+        const string personGroupName = "rldastaff";
+
 
         public MainWindow()
         {
-            InitializeComponent();
+            try
+            {
+                InitializeComponent();
 
-            if (Uri.IsWellFormedUriString(faceEndpoint, UriKind.Absolute))
-            {
-                faceClient.Endpoint = faceEndpoint;
-                
+                if (Uri.IsWellFormedUriString(faceEndpoint, UriKind.Absolute))
+                {
+                    faceClient.Endpoint = faceEndpoint;
+                }
+                else
+                {
+                    MessageBox.Show(faceEndpoint,"Invalid URI", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Environment.Exit(0);
+                }
+
+                    string personGroupException = "";
+                Task t = new Task(async () =>
+                {
+                    try
+                    {
+                        PersonGroup personGroup = await faceClient.PersonGroup.GetAsync(personGroupId);
+                    }
+                    catch (APIErrorException e)
+                    {
+                        personGroupException = e.Body.Error.Code;
+                    }
+
+                    if (personGroupException == "PersonGroupNotFound")
+                    {
+                        await faceClient.PersonGroup.CreateAsync(personGroupId, personGroupName);
+                        var friend1 = await faceClient.PersonGroupPerson.CreateAsync(personGroupId, "vic");
+                        var friend2 = await faceClient.PersonGroupPerson.CreateAsync(personGroupId, "dima");
+                        var friend3 = await faceClient.PersonGroupPerson.CreateAsync(personGroupId, "ludmila");
+                    }
+                    else
+                    {
+                        await faceClient.PersonGroup.DeleteAsync(personGroupId);
+                        //faceClient.PersonGroupPerson.AddFaceFromStreamAsync
+                    }
+
+                });
+                t.Start();
+
             }
-            else
+            catch (APIErrorException f)
             {
-                MessageBox.Show(faceEndpoint,
-                    "Invalid URI", MessageBoxButton.OK, MessageBoxImage.Error);
-                Environment.Exit(0);
+
             }
+            catch (Exception e)
+            {
+                string x = e.Message;
+            }
+
         }
+
+
 
         private async void BrowseButton_Click(object sender, RoutedEventArgs e)
         {
@@ -82,12 +125,7 @@ namespace FaceTutorial
                     drawingContext.DrawRectangle(
                         Brushes.Transparent,
                         new Pen(Brushes.Red, 2),
-                        new Rect(
-                            face.FaceRectangle.Left * resizeFactor,
-                            face.FaceRectangle.Top * resizeFactor,
-                            face.FaceRectangle.Width * resizeFactor,
-                            face.FaceRectangle.Height * resizeFactor
-                            )
+                        new Rect(face.FaceRectangle.Left * resizeFactor, face.FaceRectangle.Top * resizeFactor, face.FaceRectangle.Width * resizeFactor, face.FaceRectangle.Height * resizeFactor)
                     );
                     faceDescriptions[i] = FaceDescription(face);
                 }
@@ -95,7 +133,7 @@ namespace FaceTutorial
                 RenderTargetBitmap faceWithRectBitmap = new RenderTargetBitmap((int)(bitmapSource.PixelWidth * resizeFactor),(int)(bitmapSource.PixelHeight * resizeFactor),96,96,PixelFormats.Pbgra32);
                 faceWithRectBitmap.Render(visual);
                 FacePhoto.Source = faceWithRectBitmap;
-                faceDescriptionStatusBar.Text = defaultStatusBarText;
+                //faceDescriptionStatusBar.Text = defaultStatusBarText;
             }
         }
 
@@ -107,7 +145,6 @@ namespace FaceTutorial
             ImageSource imageSource = FacePhoto.Source;
             BitmapSource bitmapSource = (BitmapSource)imageSource;
             var scale = FacePhoto.ActualWidth / (bitmapSource.PixelWidth / resizeFactor);
-            bool mouseOverFace = false;
 
             for (int i = 0; i < faceList.Count; ++i)
             {
@@ -121,11 +158,10 @@ namespace FaceTutorial
                     mouseXY.Y >= top && mouseXY.Y <= top + height)
                 {
                     faceDescriptionStatusBar.Text = faceDescriptions[i];
-                    mouseOverFace = true;
+                    
                     break;
                 }
             }
-            if (!mouseOverFace) faceDescriptionStatusBar.Text = defaultStatusBarText;
         }
 
         private async Task<IList<DetectedFace>> UploadAndDetectFaces(string imageFilePath)
