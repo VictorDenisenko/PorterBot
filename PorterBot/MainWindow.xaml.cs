@@ -249,6 +249,8 @@ namespace PorterBot
 
         private async void PictureFolder_ClickAsync(object sender, RoutedEventArgs e)
         {
+            //UnknownFace.Visibility = Visibility.Collapsed;
+            UnknownFace.IsEnabled = false;
             CommonOpenFileDialog dialog = new CommonOpenFileDialog();
             string filePath = Properties.Settings.Default.filePath;//Переменная вида filePath должна быть сначала инициализирована в Properties/Settings проекта
             try
@@ -437,6 +439,8 @@ namespace PorterBot
                         trainingStatus = await faceClient.PersonGroup.GetTrainingStatusAsync(personGroupId);
                         if (trainingStatus.Status != TrainingStatusType.Running)
                         {
+                            //UnknownFace.Visibility = Visibility.Visible;
+                            UnknownFace.IsEnabled = true;
                             break;
                         }
                         await Task.Delay(1000);
@@ -543,7 +547,7 @@ namespace PorterBot
                         Console.WriteLine("Result of face: {0}", identifyResult.FaceId);
                         if (identifyResult.Candidates.Count == 0)
                         {
-                            Console.WriteLine("No one identified");
+                            faceDescriptionStatusBar.Text = "No one identified";
                         }
                         else
                         {
@@ -556,7 +560,7 @@ namespace PorterBot
                 }
                 catch(APIErrorException e3)
                 {
-
+                    faceDescriptionStatusBar.Text = e3.Body.Error.Message;
                 }
             }
 
