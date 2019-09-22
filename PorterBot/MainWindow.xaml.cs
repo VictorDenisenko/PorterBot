@@ -444,7 +444,7 @@ namespace PorterBot
                     faceDescriptionStatusBar.Text = e2.Message;
                 }
              
-                IList<Guid> faceIds = new Guid[1]; 
+                IList<Guid> faceIds = new Guid[faceList.Count]; 
                 for (int i = 0; i< faceList.Count; i++)
                 {
                     //var x = faceList[i].FaceId;
@@ -466,6 +466,7 @@ namespace PorterBot
                         }
                         else
                         {
+                            // Get top 1 among all candidates returned
                             var candidateId = identifyResult.Candidates[0].PersonId;
                             var person = await faceClient.PersonGroupPerson.GetAsync(personGroupId, candidateId);
                             faceDescriptionStatusBar.Text = "Identified as " + person.Name;
