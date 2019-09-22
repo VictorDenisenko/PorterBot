@@ -1,5 +1,6 @@
 using Microsoft.Azure.CognitiveServices.Vision.Face;
 using Microsoft.Azure.CognitiveServices.Vision.Face.Models;
+using Microsoft.WindowsAPICodePack.Dialogs;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -10,11 +11,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Forms;
-using Microsoft.WindowsAPICodePack.Dialogs;
 
 namespace PorterBot
 {
@@ -24,8 +22,6 @@ namespace PorterBot
         private const string faceEndpoint = "https://vic.cognitiveservices.azure.com/";
         private readonly IFaceClient faceClient = new FaceClient(new ApiKeyServiceClientCredentials(subscriptionKey), new System.Net.Http.DelegatingHandler[] { });
         private IList<DetectedFace> faceList;
-
-        
 
         private string[] faceDescriptions;
         private double resizeFactor;
@@ -47,7 +43,7 @@ namespace PorterBot
                 }
                 else
                 {
-                    System.Windows.MessageBox.Show(faceEndpoint,"Invalid URI", MessageBoxButton.OK, MessageBoxImage.Error);
+                    faceDescriptionStatusBar.Text = faceEndpoint + " Invalid URI " +  MessageBoxButton.OK + " " +  MessageBoxImage.Error;
                     Environment.Exit(0);
                 }
             }
@@ -59,13 +55,10 @@ namespace PorterBot
             {
                 faceDescriptionStatusBar.Text = e.Message;
             }
-
         }
 
-
-
         private async void BrowseButton_Click(object sender, RoutedEventArgs e)
-        {
+        {//Face Detect and Emotion finding
             var openDlg = new Microsoft.Win32.OpenFileDialog();
             openDlg.Filter = "JPEG Image(*.jpg)|*.jpg";
             bool? result = openDlg.ShowDialog(this);
@@ -76,7 +69,6 @@ namespace PorterBot
             }
 
             string filePath = openDlg.FileName;
-
             Uri fileUri = new Uri(filePath);
             BitmapImage bitmapSource = new BitmapImage();
 
@@ -84,12 +76,11 @@ namespace PorterBot
             bitmapSource.CacheOption = BitmapCacheOption.None;
             bitmapSource.UriSource = fileUri;
             bitmapSource.EndInit();
-
             FacePhoto.Source = bitmapSource;
 
-            Title = "Detecting...";
+            faceDescriptionStatusBar.Text = "Detecting...";
             faceList = await UploadAndDetectFaces(filePath);
-            Title = String.Format("Detection Finished. {0} face(s) detected", faceList.Count);
+            faceDescriptionStatusBar.Text = "Detection Finished. Detected " + faceList.Count + " face(s)";
 
             if (faceList.Count > 0)
             {
@@ -155,7 +146,6 @@ namespace PorterBot
                     FaceAttributeType.Glasses, FaceAttributeType.Hair,
                     FaceAttributeType.FacialHair
                 };
-
             try
             {
                 using (Stream imageFileStream = File.OpenRead(imageFilePath))
@@ -166,12 +156,12 @@ namespace PorterBot
             }
             catch (APIErrorException f)
             {
-                System.Windows.MessageBox.Show(f.Message);
+                faceDescriptionStatusBar.Text = f.Message;
                 return new List<DetectedFace>();
             }
             catch (Exception e)
             {
-                System.Windows.MessageBox.Show(e.Message, "Error");
+                faceDescriptionStatusBar.Text = e.Message;
                 return new List<DetectedFace>();
             }
         }
@@ -215,11 +205,9 @@ namespace PorterBot
             return sb.ToString();
         }
 
-
         private async void PictureFolder_ClickAsync(object sender, RoutedEventArgs e)
         {
             faceDescriptionStatusBar.Text = "";
-            //UnknownFace.Visibility = Visibility.Collapsed;
             UnknownFace.IsEnabled = false;
             CommonOpenFileDialog dialog = new CommonOpenFileDialog();
             string filePath = Properties.Settings.Default.filePath;//Переменная вида filePath должна быть сначала инициализирована в Properties/Settings проекта
@@ -246,7 +234,6 @@ namespace PorterBot
                 return;
             }
 
-
             bool groupExists = false;
             try
             {
@@ -258,11 +245,11 @@ namespace PorterBot
                 groupExists = false;
                 if (ex.Body.Error.Code != "PersonGroupNotFound")
                 {
-                    faceDescriptionStatusBar.Text = "Response: {0}. {1}" + "; " + ex.Body.Error.Message;
+                    faceDescriptionStatusBar.Text = "Response: " + ex.Body.Error.Message;
                 }
                 else
                 {
-                    faceDescriptionStatusBar.Text = "Response: Group {0} did not exist previously.";
+                    faceDescriptionStatusBar.Text = "Response: Group " + personGroupId + " did not exist previously.";
                 }
             }
 
@@ -283,15 +270,13 @@ namespace PorterBot
                 }
                 catch (APIErrorException ex)
                 {
-                    faceDescriptionStatusBar.Text = "Response: {0}. {1}" + ex.Body.Error.Code + "; " + ex.Body.Error.Message;
+                    faceDescriptionStatusBar.Text = "Response: "  + ex.Body.Error.Message;
                     return;
                 }
 
                 int processCount = 0;
                 bool forceContinue = false;
-
                 faceDescriptionStatusBar.Text = "Request: Preparing faces for identification, detecting faces in chosen folder.";
-
                 int invalidImageCount = 0;
                 int imageIndex = 0;
                 foreach (var dir in Directory.EnumerateDirectories(filePath))
@@ -300,16 +285,10 @@ namespace PorterBot
                     var tag = Path.GetFileName(dir);
                     Person person  =await faceClient.PersonGroupPerson.CreateAsync(personGroupId, tag);
                     imageIndex++;
-                    //Person p = new Person();
-                    //p.Name = tag;
                     var faces = new ObservableCollection<DetectedFace>();
-                    //p.Faces = faces;
-                    // Call create person REST API, the new create person id will be returned
                     string img;
                     // Enumerate images under the person folder, call detection
-                    var imageList = new ConcurrentBag<string>(
-                        Directory.EnumerateFiles(dir, "*.*", SearchOption.AllDirectories)
-                            .Where(s => s.ToLower().EndsWith(".jpg") || s.ToLower().EndsWith(".png") || s.ToLower().EndsWith(".bmp") || s.ToLower().EndsWith(".gif")));
+                    var imageList = new ConcurrentBag<string>(Directory.EnumerateFiles(dir, "*.*", SearchOption.AllDirectories).Where(s => s.ToLower().EndsWith(".jpg") || s.ToLower().EndsWith(".png") || s.ToLower().EndsWith(".bmp") || s.ToLower().EndsWith(".gif")));
 
                     while (imageList.TryTake(out img))
                     {
@@ -323,8 +302,6 @@ namespace PorterBot
                                     {
                                         // Update person faces on server side
                                         await faceClient.PersonGroupPerson.AddFaceFromStreamAsync(personGroupId, person.PersonId, fStream);
-                                        //var persistFace = await faceClient.FaceList.AddFaceFromStreamAsync("", fStream, imgPath);
-                                        //return new Tuple<string, ClientContract.AddPersistedFaceResult>(imgPath, persistFace);
                                     }
                                     catch (APIErrorException ex)
                                     {
@@ -367,15 +344,16 @@ namespace PorterBot
                             }));
                         if (processCount >= SuggestionCount && !forceContinue)
                         {
-                            var continueProcess = System.Windows.MessageBox.Show("The images loaded have reached the recommended count, may take long time if proceed. Would you like to continue to load images?", "Warning");
-                            //if (continueProcess == )
-                            //{
-                            //    forceContinue = true;
-                            //}
-                            //else
-                            //{
-                            //    break;
-                            //}
+                            //var continueProcess = MessageBox.Show("The images loaded have reached the recommended count, may take long time if proceed. Would you like to continue to load images?", "Warning");
+                            var continueProcess = System.Windows.Forms.MessageBox.Show("The images loaded have reached the recommended count, may take long time if proceed. Would you like to continue to load images?", "Warning", System.Windows.Forms.MessageBoxButtons.YesNo);
+                            if (continueProcess == System.Windows.Forms.DialogResult.Yes)
+                            {
+                                forceContinue = true;
+                            }
+                            else
+                            {
+                                break;
+                            }
                         }
 
                         if (tasks.Count >= _maxConcurrentProcesses || imageList.IsEmpty)
@@ -384,8 +362,6 @@ namespace PorterBot
                             tasks.Clear();
                         }
                     }
-
-                    //faces.Add(p);
                 }
                 if (invalidImageCount > 0)
                 {
@@ -395,9 +371,7 @@ namespace PorterBot
 
                 try
                 {
-                    // Start train large person group
-                    faceDescriptionStatusBar.Text = "Request: Training group \"{0}\"";
-                    //await faceServiceClient.TrainLargePersonGroupAsync(this.GroupId);
+                    faceDescriptionStatusBar.Text = "Training group " + personGroupId;
                     await faceClient.PersonGroup.TrainAsync(personGroupId);
                     // Wait until train completed
                     TrainingStatus trainingStatus = null;
@@ -406,25 +380,12 @@ namespace PorterBot
                         trainingStatus = await faceClient.PersonGroup.GetTrainingStatusAsync(personGroupId);
                         if (trainingStatus.Status != TrainingStatusType.Running)
                         {
-                            //UnknownFace.Visibility = Visibility.Visible;
                             faceDescriptionStatusBar.Text = "Training is finished";
                             UnknownFace.IsEnabled = true;
                             break;
                         }
                         await Task.Delay(1000);
                     }
-
-                    //while (true)
-                    //{
-                    //    await Task.Delay(1000);
-
-                    //    faceDescriptionStatusBar.Text = "Response: {0}. Group \"{1}\" training process is {2} " + "Success";
-                    //    //if (status.Status != Contract.Status.Running)
-                    //    //{
-                    //    //    break;
-                    //    //}
-                    //}
-                    //IdentifyButton.IsEnabled = true;
                 }
                 catch (APIErrorException ex)
                 {
@@ -432,7 +393,6 @@ namespace PorterBot
                 }
             }
             GC.Collect();
-            
         }
 
         private async void UnknownFace_Click(object sender, RoutedEventArgs e)
@@ -448,18 +408,13 @@ namespace PorterBot
             }
 
             string filePath = openDlg.FileName;
-
             Uri fileUri = new Uri(filePath);
             BitmapImage bitmapSource = new BitmapImage();
-
             bitmapSource.BeginInit();
             bitmapSource.CacheOption = BitmapCacheOption.None;
             bitmapSource.UriSource = fileUri;
             bitmapSource.EndInit();
-
             FacePhoto.Source = bitmapSource;
-
-
 
             using (Stream s = File.OpenRead(filePath))
             {
@@ -492,10 +447,10 @@ namespace PorterBot
                 IList<Guid> faceIds = new Guid[1]; 
                 for (int i = 0; i< faceList.Count; i++)
                 {
-                    var x = faceList[i].FaceId;
-                    Guid yourGuid = Guid.NewGuid();
+                    //var x = faceList[i].FaceId;
                     Guid defaultId = Guid.NewGuid();
-                    faceIds[i] = x.Value;
+                    //faceIds[i] = x.Value;
+                    faceIds[i] = faceList[i].FaceId.Value;
                     defaultId = faceList[i].FaceId.Value;
                 }
 
@@ -504,17 +459,16 @@ namespace PorterBot
                     var results = await faceClient.Face.IdentifyAsync(faceIds, personGroupId);
                     foreach (var identifyResult in results)
                     {
-                        Console.WriteLine("Result of face: {0}", identifyResult.FaceId);
+                        faceDescriptionStatusBar.Text = "Result of face: " + identifyResult.FaceId;
                         if (identifyResult.Candidates.Count == 0)
                         {
                             faceDescriptionStatusBar.Text = "No one identified";
                         }
                         else
                         {
-                            // Get top 1 among all candidates returned
                             var candidateId = identifyResult.Candidates[0].PersonId;
                             var person = await faceClient.PersonGroupPerson.GetAsync(personGroupId, candidateId);
-                            faceDescriptionStatusBar.Text = "Identified as {0} " + person.Name;
+                            faceDescriptionStatusBar.Text = "Identified as " + person.Name;
                         }
                     }
                 }
@@ -523,7 +477,6 @@ namespace PorterBot
                     faceDescriptionStatusBar.Text = e3.Body.Error.Message;
                 }
             }
-
         }
     }
 }
