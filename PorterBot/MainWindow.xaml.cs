@@ -50,43 +50,14 @@ namespace PorterBot
                     System.Windows.MessageBox.Show(faceEndpoint,"Invalid URI", MessageBoxButton.OK, MessageBoxImage.Error);
                     Environment.Exit(0);
                 }
-
-                    string personGroupException = "";
-                Task t = new Task(async () =>
-                {
-                    try
-                    {
-                        PersonGroup personGroup = await faceClient.PersonGroup.GetAsync(personGroupId);
-                    }
-                    catch (APIErrorException e)
-                    {
-                        personGroupException = e.Body.Error.Code;
-                    }
-
-                    if (personGroupException == "PersonGroupNotFound")
-                    {
-                        await faceClient.PersonGroup.CreateAsync(personGroupId, personGroupName);
-                        var friend1 = await faceClient.PersonGroupPerson.CreateAsync(personGroupId, "vic");
-                        var friend2 = await faceClient.PersonGroupPerson.CreateAsync(personGroupId, "dima");
-                        var friend3 = await faceClient.PersonGroupPerson.CreateAsync(personGroupId, "ludmila");
-                    }
-                    else
-                    {
-                        await faceClient.PersonGroup.DeleteAsync(personGroupId);
-                        //faceClient.PersonGroupPerson.AddFaceFromStreamAsync
-                        
-                    }
-
-                });
-                t.Start();
             }
             catch (APIErrorException f)
             {
-
+                faceDescriptionStatusBar.Text = f.Body.Error.Message;
             }
             catch (Exception e)
             {
-                string x = e.Message;
+                faceDescriptionStatusBar.Text = e.Message;
             }
 
         }
@@ -245,10 +216,9 @@ namespace PorterBot
         }
 
 
-
-
         private async void PictureFolder_ClickAsync(object sender, RoutedEventArgs e)
         {
+            faceDescriptionStatusBar.Text = "";
             //UnknownFace.Visibility = Visibility.Collapsed;
             UnknownFace.IsEnabled = false;
             CommonOpenFileDialog dialog = new CommonOpenFileDialog();
@@ -272,6 +242,7 @@ namespace PorterBot
             }
             catch(Exception e1)
             {
+                faceDescriptionStatusBar.Text = e1.Message;
                 return;
             }
 
@@ -287,7 +258,7 @@ namespace PorterBot
                 groupExists = false;
                 if (ex.Body.Error.Code != "PersonGroupNotFound")
                 {
-                    faceDescriptionStatusBar.Text = "Response: {0}. {1}" + ex.Body.Error.Code + "; " + ex.Body.Error.Message;
+                    faceDescriptionStatusBar.Text = "Response: {0}. {1}" + "; " + ex.Body.Error.Message;
                 }
                 else
                 {
@@ -302,7 +273,6 @@ namespace PorterBot
             }
 
             filePath = dialog.FileName;
-
             const int SuggestionCount = 15;
 
             if (groupExists == false)
@@ -310,9 +280,6 @@ namespace PorterBot
                 try
                 {
                     await faceClient.PersonGroup.CreateAsync(personGroupId, personGroupName);
-                    //var friend1 = await faceClient.PersonGroupPerson.CreateAsync(personGroupId, "vic");
-                    //var friend2 = await faceClient.PersonGroupPerson.CreateAsync(personGroupId, "dima");
-                    //var friend3 = await faceClient.PersonGroupPerson.CreateAsync(personGroupId, "ludmila");
                 }
                 catch (APIErrorException ex)
                 {
@@ -440,6 +407,7 @@ namespace PorterBot
                         if (trainingStatus.Status != TrainingStatusType.Running)
                         {
                             //UnknownFace.Visibility = Visibility.Visible;
+                            faceDescriptionStatusBar.Text = "Training is finished";
                             UnknownFace.IsEnabled = true;
                             break;
                         }
@@ -469,6 +437,7 @@ namespace PorterBot
 
         private async void UnknownFace_Click(object sender, RoutedEventArgs e)
         {
+            faceDescriptionStatusBar.Text = "";
             var openDlg = new Microsoft.Win32.OpenFileDialog();
             openDlg.Filter = "JPEG Image(*.jpg)|*.jpg";
             bool? result = openDlg.ShowDialog(this);
@@ -513,31 +482,22 @@ namespace PorterBot
                 }
                 catch (APIErrorException f)
                 {
-                    System.Windows.MessageBox.Show(f.Message);
+                    faceDescriptionStatusBar.Text = f.Body.Error.Message;
                 }
                 catch (Exception e2)
                 {
-                    System.Windows.MessageBox.Show(e2.Message, "Error");
+                    faceDescriptionStatusBar.Text = e2.Message;
                 }
-
-
              
                 IList<Guid> faceIds = new Guid[1]; 
-
                 for (int i = 0; i< faceList.Count; i++)
                 {
                     var x = faceList[i].FaceId;
-
                     Guid yourGuid = Guid.NewGuid();
-
                     Guid defaultId = Guid.NewGuid();
-
                     faceIds[i] = x.Value;
-
                     defaultId = faceList[i].FaceId.Value;
                 }
-
-                var faceIds1 = faceList.Select(face => face.FaceId).ToArray();
 
                 try
                 {
