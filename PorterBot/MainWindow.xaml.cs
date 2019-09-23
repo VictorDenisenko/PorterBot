@@ -80,7 +80,7 @@ namespace PorterBot
 
             faceDescriptionStatusBar.Text = "Detecting...";
             faceList = await UploadAndDetectFaces(filePath);
-            faceDescriptionStatusBar.Text = "Detection Finished. Detected " + faceList.Count + " face(s)";
+            //faceDescriptionStatusBar.Text = "Detection Finished. Detected " + faceList.Count + " face(s)";
 
             if (faceList.Count > 0)
             {
@@ -130,7 +130,6 @@ namespace PorterBot
                     mouseXY.Y >= top && mouseXY.Y <= top + height)
                 {
                     faceDescriptionStatusBar.Text = faceDescriptions[i];
-                    
                     break;
                 }
             }
@@ -365,7 +364,7 @@ namespace PorterBot
                 }
                 if (invalidImageCount > 0)
                 {
-                    faceDescriptionStatusBar.Text = "Warning: more or less than one face is detected in {0} images, can not add to face list. " + invalidImageCount;
+                    faceDescriptionStatusBar.Text = "Warning: more or less than one face is detected in images, can not add to face list. " + invalidImageCount;
                 }
                 faceDescriptionStatusBar.Text = "Response: Success. Total {0} faces are detected.";// + Persons.Sum(p => p.Faces.Count);
 
@@ -389,7 +388,7 @@ namespace PorterBot
                 }
                 catch (APIErrorException ex)
                 {
-                    faceDescriptionStatusBar.Text = "Response: {0}. {1} " + ex.Body.Error.Code + "; " + ex.Body.Error.Message;
+                    faceDescriptionStatusBar.Text = "Response: " + ex.Body.Error.Message;
                 }
             }
             GC.Collect();
@@ -447,9 +446,7 @@ namespace PorterBot
                 IList<Guid> faceIds = new Guid[faceList.Count]; 
                 for (int i = 0; i< faceList.Count; i++)
                 {
-                    //var x = faceList[i].FaceId;
                     Guid defaultId = Guid.NewGuid();
-                    //faceIds[i] = x.Value;
                     faceIds[i] = faceList[i].FaceId.Value;
                     defaultId = faceList[i].FaceId.Value;
                 }
@@ -479,5 +476,7 @@ namespace PorterBot
                 }
             }
         }
+
+        
     }
 }

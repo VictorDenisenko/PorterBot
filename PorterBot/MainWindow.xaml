@@ -12,15 +12,16 @@
             <Button x:Name="PictureFolder" Width="82" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left"
                      Content="PictureFolder"
                      Click="PictureFolder_ClickAsync" />
-            <Button x:Name="BrowseButton" Width="82" Height="20" VerticalAlignment="Bottom" HorizontalAlignment="Left"
+            <Button x:Name="BrowseButton" Width="82" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left"
                      Content="BrowseForDetecting"
                      Click="BrowseButton_Click" />
-            <StatusBar VerticalAlignment="Bottom">
+        </DockPanel>
+        <StatusBar VerticalAlignment="Bottom">
                 <StatusBarItem>
                     <TextBlock Name="faceDescriptionStatusBar" />
                 </StatusBarItem>
-            </StatusBar>
-        </DockPanel>
+        </StatusBar>
+        
     </Grid>
 </Window>
 <!-- </snippet_xaml> -->
