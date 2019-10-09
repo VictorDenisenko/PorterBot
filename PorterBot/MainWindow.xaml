@@ -6,13 +6,16 @@
     <Grid x:Name="BackPanel">
         <Image x:Name="FacePhoto" Stretch="Uniform" Margin="0,0,0,50" MouseMove="FacePhoto_MouseMove" />
         <DockPanel DockPanel.Dock="Bottom">
-            <Button x:Name="UnknownFace" Width="82" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left"
+            <Button x:Name="AutomaticFace" Width="110" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left"
+                     Content="AutomaticFace"
+                     Click="AutomaticFace_Click"/>
+            <Button x:Name="UnknownFace" Width="110" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left"
                      Content="UnknownFace"
                      Click="UnknownFace_Click"/>
-            <Button x:Name="PictureFolder" Width="82" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left"
+            <Button x:Name="PictureFolder" Width="110" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left"
                      Content="PictureFolder"
                      Click="PictureFolder_ClickAsync" />
-            <Button x:Name="BrowseButton" Width="82" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left"
+            <Button x:Name="BrowseButton" Width="110" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left"
                      Content="BrowseForDetecting"
                      Click="BrowseButton_Click" />
         </DockPanel>

@@ -394,7 +394,7 @@ namespace PorterBot
             GC.Collect();
         }
 
-        private async void UnknownFace_Click(object sender, RoutedEventArgs e)
+        private void UnknownFace_Click(object sender, RoutedEventArgs e)
         {
             faceDescriptionStatusBar.Text = "";
             var openDlg = new Microsoft.Win32.OpenFileDialog();
@@ -405,15 +405,41 @@ namespace PorterBot
             {
                 return;
             }
-
             string filePath = openDlg.FileName;
             Uri fileUri = new Uri(filePath);
+
             BitmapImage bitmapSource = new BitmapImage();
             bitmapSource.BeginInit();
             bitmapSource.CacheOption = BitmapCacheOption.None;
             bitmapSource.UriSource = fileUri;
             bitmapSource.EndInit();
             FacePhoto.Source = bitmapSource;
+
+            UnknownFaceChoosing(filePath);
+        }
+
+
+        private async void UnknownFaceChoosing(string filePath)
+        {
+            //faceDescriptionStatusBar.Text = "";
+            //var openDlg = new Microsoft.Win32.OpenFileDialog();
+            //openDlg.Filter = "JPEG Image(*.jpg)|*.jpg";
+            //bool? result = openDlg.ShowDialog(this);
+
+            //if (!(bool)result)
+            //{
+            //    return;
+            //}
+
+            //string filePath = openDlg.FileName;
+            //Uri fileUri = new Uri(filePath);
+
+            //BitmapImage bitmapSource = new BitmapImage();
+            //bitmapSource.BeginInit();
+            //bitmapSource.CacheOption = BitmapCacheOption.None;
+            //bitmapSource.UriSource = fileUri;
+            //bitmapSource.EndInit();
+            //FacePhoto.Source = bitmapSource;
 
             using (Stream s = File.OpenRead(filePath))
             {
@@ -477,6 +503,19 @@ namespace PorterBot
             }
         }
 
-        
+        private void AutomaticFace_Click(object sender, RoutedEventArgs e)
+        {
+            string filePath = "c://Users//vic//Pictures//SimplePhoto.jpg";
+
+            Uri fileUri = new Uri(filePath);
+            BitmapImage bitmapSource = new BitmapImage();
+            bitmapSource.BeginInit();
+            bitmapSource.CacheOption = BitmapCacheOption.None;
+            bitmapSource.UriSource = fileUri;
+            bitmapSource.EndInit();
+            FacePhoto.Source = bitmapSource;
+
+            UnknownFaceChoosing(filePath);
+        }
     }
 }
