@@ -13,6 +13,8 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Runtime.Serialization.Json;
+using System.Runtime.Serialization;
 
 namespace PorterBot
 {
@@ -30,6 +32,7 @@ namespace PorterBot
         const string personGroupName = "rldastaff";
         private int _maxConcurrentProcesses;
         private int k_NumberOfEvents = 0;
+        IdentificationResults identificationResults = null;
 
         public MainWindow()
         {
@@ -62,6 +65,7 @@ namespace PorterBot
                 //fsw.Deleted += new FileSystemEventHandler(OnChanged);
                 fsw.Error += new ErrorEventHandler(OnError);
                 fsw.EnableRaisingEvents = true;
+                identificationResults = new IdentificationResults();
             }
             catch (APIErrorException f)
             {
@@ -75,12 +79,6 @@ namespace PorterBot
 
         private async void BrowseButton_Click(object sender, RoutedEventArgs e)
         {
-            await FaceEmotion(null, null);
-        }
-
-
-        private async Task FaceEmotion(object sender, RoutedEventArgs e)
-        {//Face Detect and Emotion finding
             var openDlg = new Microsoft.Win32.OpenFileDialog();
             openDlg.Filter = "JPEG Image(*.jpg)|*.jpg";
             bool? result = openDlg.ShowDialog(this);
@@ -101,6 +99,12 @@ namespace PorterBot
             FacePhoto.Source = bitmapSource;
 
             faceDescriptionStatusBar.Text = "Detecting...";
+            await FaceEmotion(filePath, bitmapSource);
+        }
+
+
+        private async Task FaceEmotion(string filePath, BitmapImage bitmapSource)
+        {//Face Detect and Emotion finding
             faceList = await UploadAndDetectFaces(filePath);
             //faceDescriptionStatusBar.Text = "Detection Finished. Detected " + faceList.Count + " face(s)";
 
@@ -123,6 +127,7 @@ namespace PorterBot
                     );
                     faceDescriptions[i] = FaceDescription(face);
                 }
+
                 drawingContext.Close();
                 RenderTargetBitmap faceWithRectBitmap = new RenderTargetBitmap((int)(bitmapSource.PixelWidth * resizeFactor),(int)(bitmapSource.PixelHeight * resizeFactor),96,96,PixelFormats.Pbgra32);
                 faceWithRectBitmap.Render(visual);
@@ -189,6 +194,7 @@ namespace PorterBot
 
         private string FaceDescription(DetectedFace face)
         {
+            
             StringBuilder sb = new StringBuilder();
             sb.Append("Face: ");
             sb.Append(face.FaceAttributes.Gender);
@@ -221,6 +227,32 @@ namespace PorterBot
                     sb.Append(hairColor.Color.ToString());
                     sb.Append(String.Format(" {0:F1}% ", hairColor.Confidence * 100));
                 }
+            }
+
+            identificationResults.Name = "";
+            identificationResults.Age = face.FaceAttributes.Age;
+            identificationResults.Blur = face.FaceAttributes.Blur;
+            identificationResults.Emotion = face.FaceAttributes.Emotion;
+            identificationResults.Exposure = face.FaceAttributes.Exposure;
+            identificationResults.FacialHair = face.FaceAttributes.FacialHair;
+            identificationResults.Gender = face.FaceAttributes.Gender;
+            identificationResults.Glasses = face.FaceAttributes.Glasses;
+            identificationResults.Hair = face.FaceAttributes.Hair;
+            identificationResults.HeadPose = face.FaceAttributes.HeadPose;
+            identificationResults.Makeup = face.FaceAttributes.Makeup;
+            identificationResults.Noise = face.FaceAttributes.Noise;
+            identificationResults.Occlusion = face.FaceAttributes.Occlusion;
+            identificationResults.Smile = face.FaceAttributes.Smile;
+
+            DataContractJsonSerializer jsonFormatter = new DataContractJsonSerializer(typeof(IdentificationResults));
+            using (FileStream fs = new FileStream("DataFromAzure.json", FileMode.OpenOrCreate))
+            {
+                jsonFormatter.WriteObject(fs, identificationResults);
+            }
+
+            using (FileStream fs = new FileStream("DataFromAzure.json", FileMode.OpenOrCreate))
+            {
+                IdentificationResults dataFromAzure = (IdentificationResults)jsonFormatter.ReadObject(fs);
             }
 
             return sb.ToString();
@@ -494,6 +526,7 @@ namespace PorterBot
                             var candidateId = identifyResult.Candidates[0].PersonId;
                             var person = await faceClient.PersonGroupPerson.GetAsync(personGroupId, candidateId);
                             faceDescriptionStatusBar.Text = "Identified as " + person.Name;
+                            identificationResults.Name = person.Name;
                         }
                     }
                 }
