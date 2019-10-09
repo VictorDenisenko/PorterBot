@@ -46,6 +46,16 @@ namespace PorterBot
                     faceDescriptionStatusBar.Text = faceEndpoint + " Invalid URI " +  MessageBoxButton.OK + " " +  MessageBoxImage.Error;
                     Environment.Exit(0);
                 }
+
+                FileSystemWatcher fsw = new FileSystemWatcher("c:\\Users\\vic\\Pictures\\");
+                fsw.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite
+                    | NotifyFilters.FileName | NotifyFilters.DirectoryName;
+
+                fsw.Changed += new FileSystemEventHandler(OnChanged);
+                fsw.Created += new FileSystemEventHandler(OnChanged);
+                fsw.Deleted += new FileSystemEventHandler(OnChanged);
+                fsw.Error += new ErrorEventHandler(OnError);
+                fsw.EnableRaisingEvents = true;
             }
             catch (APIErrorException f)
             {
@@ -421,30 +431,9 @@ namespace PorterBot
 
         private async void UnknownFaceChoosing(string filePath)
         {
-            //faceDescriptionStatusBar.Text = "";
-            //var openDlg = new Microsoft.Win32.OpenFileDialog();
-            //openDlg.Filter = "JPEG Image(*.jpg)|*.jpg";
-            //bool? result = openDlg.ShowDialog(this);
-
-            //if (!(bool)result)
-            //{
-            //    return;
-            //}
-
-            //string filePath = openDlg.FileName;
-            //Uri fileUri = new Uri(filePath);
-
-            //BitmapImage bitmapSource = new BitmapImage();
-            //bitmapSource.BeginInit();
-            //bitmapSource.CacheOption = BitmapCacheOption.None;
-            //bitmapSource.UriSource = fileUri;
-            //bitmapSource.EndInit();
-            //FacePhoto.Source = bitmapSource;
-
             using (Stream s = File.OpenRead(filePath))
             {
-                IList<FaceAttributeType> faceAttributes =
-               new FaceAttributeType[]
+                IList<FaceAttributeType> faceAttributes = new FaceAttributeType[]
                {
                     FaceAttributeType.Gender, FaceAttributeType.Age,
                     FaceAttributeType.Smile, FaceAttributeType.Emotion,
@@ -506,7 +495,6 @@ namespace PorterBot
         private void AutomaticFace_Click(object sender, RoutedEventArgs e)
         {
             string filePath = "c://Users//vic//Pictures//SimplePhoto.jpg";
-
             Uri fileUri = new Uri(filePath);
             BitmapImage bitmapSource = new BitmapImage();
             bitmapSource.BeginInit();
@@ -514,8 +502,24 @@ namespace PorterBot
             bitmapSource.UriSource = fileUri;
             bitmapSource.EndInit();
             FacePhoto.Source = bitmapSource;
-
             UnknownFaceChoosing(filePath);
+        }
+
+      
+        private static void OnChanged(object source, FileSystemEventArgs e)
+        {
+            string filePath = "c:\\Users\\vic\\Pictures\\CapturedPhoto.jpg";
+            WatcherChangeTypes wct = e.ChangeType;
+            Console.WriteLine("File {0} {1}", e.FullPath, wct.ToString());
+        }
+
+        private static void OnError(object source, ErrorEventArgs e)
+        {
+            Console.WriteLine("The FileSystemWatcher has detected an error");
+            if (e.GetException().GetType() == typeof(InternalBufferOverflowException))
+            {
+                Console.WriteLine(("The file system watcher experienced an internal buffer overflow: " + e.GetException().Message));
+            }
         }
     }
 }
