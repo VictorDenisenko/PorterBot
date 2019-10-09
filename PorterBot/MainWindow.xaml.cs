@@ -29,6 +29,7 @@ namespace PorterBot
         const string personGroupId = "rldastaffid";
         const string personGroupName = "rldastaff";
         private int _maxConcurrentProcesses;
+        private int k_NumberOfEvents = 0;
 
         public MainWindow()
         {
@@ -47,13 +48,18 @@ namespace PorterBot
                     Environment.Exit(0);
                 }
 
-                FileSystemWatcher fsw = new FileSystemWatcher("c:\\Users\\vic\\Pictures\\");
-                fsw.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite
-                    | NotifyFilters.FileName | NotifyFilters.DirectoryName;
+                //FileSystemWatcher fsw = new FileSystemWatcher("c:\\Users\\vic\\Pictures\\");
+                //fsw.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite
+                //    | NotifyFilters.FileName | NotifyFilters.DirectoryName;
 
-                fsw.Changed += new FileSystemEventHandler(OnChanged);
-                fsw.Created += new FileSystemEventHandler(OnChanged);
-                fsw.Deleted += new FileSystemEventHandler(OnChanged);
+                FileSystemWatcher fsw = new FileSystemWatcher("c:\\Users\\vic\\Pictures\\");
+                fsw.NotifyFilter = NotifyFilters.LastWrite;
+
+                fsw.Changed += Fsw_Changed;
+                
+                //fsw.Changed += new FileSystemEventHandler(OnChanged);
+                //fsw.Created += new FileSystemEventHandler(OnChanged);
+                //fsw.Deleted += new FileSystemEventHandler(OnChanged);
                 fsw.Error += new ErrorEventHandler(OnError);
                 fsw.EnableRaisingEvents = true;
             }
@@ -68,6 +74,12 @@ namespace PorterBot
         }
 
         private async void BrowseButton_Click(object sender, RoutedEventArgs e)
+        {
+            await FaceEmotion(null, null);
+        }
+
+
+        private async Task FaceEmotion(object sender, RoutedEventArgs e)
         {//Face Detect and Emotion finding
             var openDlg = new Microsoft.Win32.OpenFileDialog();
             openDlg.Filter = "JPEG Image(*.jpg)|*.jpg";
@@ -494,7 +506,7 @@ namespace PorterBot
 
         private void AutomaticFace_Click(object sender, RoutedEventArgs e)
         {
-            string filePath = "c://Users//vic//Pictures//SimplePhoto.jpg";
+            string filePath = "c://Users//vic//Pictures//CapturedPhoto.jpg";
             Uri fileUri = new Uri(filePath);
             BitmapImage bitmapSource = new BitmapImage();
             bitmapSource.BeginInit();
@@ -505,12 +517,19 @@ namespace PorterBot
             UnknownFaceChoosing(filePath);
         }
 
-      
-        private static void OnChanged(object source, FileSystemEventArgs e)
+
+        private void Fsw_Changed(object sender, FileSystemEventArgs e)
         {
-            string filePath = "c:\\Users\\vic\\Pictures\\CapturedPhoto.jpg";
-            WatcherChangeTypes wct = e.ChangeType;
-            Console.WriteLine("File {0} {1}", e.FullPath, wct.ToString());
+            k_NumberOfEvents++;
+            if (k_NumberOfEvents == 1)
+            {
+                string filePath = "c:\\Users\\vic\\Pictures\\CapturedPhoto.jpg";
+                this.Dispatcher.Invoke(() =>
+                {
+                    AutomaticFace_Click(null, null);
+                });
+                filePath = e.FullPath;
+            }
         }
 
         private static void OnError(object source, ErrorEventArgs e)
