@@ -12,18 +12,18 @@ namespace PorterBot
     {
         public string Name { get; set; }
         public double? Age { get; set; }//? означает, что переменная может принимать значение "null"
-        public Blur Blur { get; set; }
-        public Emotion Emotion { get; set; }
-        public Exposure Exposure { get; set; }
-        public FacialHair FacialHair { get; set; }
-        public Gender? Gender { get; set; }
-        public GlassesType? Glasses { get; set; }
-        public Hair Hair { get; set; }
-        public HeadPose HeadPose { get; set; }
-        public Makeup Makeup { get; set; }
-        public Noise Noise { get; set; }
-        public Occlusion Occlusion { get; set; }
-        public double? Smile { get; set; }
+        public string Blur { get; set; }
+        public string Emotion { get; set; }
+        public string Exposure { get; set; }
+        public string FacialHair { get; set; }
+        public string Gender { get; set; }
+        public string Glasses { get; set; }
+        public string Hair { get; set; }
+        public double HeadPose { get; set; }
+        public string Makeup { get; set; }
+        public string Noise { get; set; }
+        public string Occlusion { get; set; }
+        public double Smile { get; set; }
 
     }
 }

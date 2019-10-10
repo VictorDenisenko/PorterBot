@@ -33,6 +33,8 @@ namespace PorterBot
         private int _maxConcurrentProcesses;
         private int k_NumberOfEvents = 0;
         IdentificationResults identificationResults = null;
+        public string userRoot = "";
+        public string fileFromAzure = "";
 
         public MainWindow()
         {
@@ -55,7 +57,13 @@ namespace PorterBot
                 //fsw.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite
                 //    | NotifyFilters.FileName | NotifyFilters.DirectoryName;
 
-                FileSystemWatcher fsw = new FileSystemWatcher("c:\\Users\\vic\\Pictures\\");
+                userRoot = System.Environment.GetEnvironmentVariable("USERPROFILE");
+                fileFromAzure = "c:\\Users\\vic\\Pictures\\FromCamera\\CapturedPhoto.jpg";
+                //System.Windows.Resources.StreamResourceInfo res = Application.GetResourceStream(new Uri("Users", UriKind.RelativeOrAbsolute));
+
+
+                //FileSystemWatcher fsw = new FileSystemWatcher("c:\\Users\\vic\\Pictures\\");
+                FileSystemWatcher fsw = new FileSystemWatcher(userRoot + "\\Pictures\\FromCamera\\");
                 fsw.NotifyFilter = NotifyFilters.LastWrite;
 
                 fsw.Changed += Fsw_Changed;
@@ -229,31 +237,33 @@ namespace PorterBot
                 }
             }
 
-            identificationResults.Name = "";
             identificationResults.Age = face.FaceAttributes.Age;
-            identificationResults.Blur = face.FaceAttributes.Blur;
-            identificationResults.Emotion = face.FaceAttributes.Emotion;
-            identificationResults.Exposure = face.FaceAttributes.Exposure;
-            identificationResults.FacialHair = face.FaceAttributes.FacialHair;
-            identificationResults.Gender = face.FaceAttributes.Gender;
-            identificationResults.Glasses = face.FaceAttributes.Glasses;
-            identificationResults.Hair = face.FaceAttributes.Hair;
-            identificationResults.HeadPose = face.FaceAttributes.HeadPose;
-            identificationResults.Makeup = face.FaceAttributes.Makeup;
-            identificationResults.Noise = face.FaceAttributes.Noise;
-            identificationResults.Occlusion = face.FaceAttributes.Occlusion;
-            identificationResults.Smile = face.FaceAttributes.Smile;
+            identificationResults.Blur = Convert.ToString(face.FaceAttributes.Blur);
+            identificationResults.Emotion = Convert.ToString(face.FaceAttributes.Emotion);
+            identificationResults.Exposure = Convert.ToString(face.FaceAttributes.Exposure);
+            identificationResults.FacialHair = Convert.ToString(face.FaceAttributes.FacialHair);
+            identificationResults.Gender = Convert.ToString(face.FaceAttributes.Gender);
+            identificationResults.Glasses = Convert.ToString(face.FaceAttributes.Glasses);
+            identificationResults.Hair = Convert.ToString(face.FaceAttributes.Hair);
+            identificationResults.HeadPose = Convert.ToDouble(face.FaceAttributes.HeadPose);
+            identificationResults.Makeup = Convert.ToString(face.FaceAttributes.Makeup);
+            identificationResults.Noise = Convert.ToString(face.FaceAttributes.Noise);
+            identificationResults.Occlusion = Convert.ToString(face.FaceAttributes.Occlusion);
+            identificationResults.Smile = Convert.ToDouble(face.FaceAttributes.Smile);
 
             DataContractJsonSerializer jsonFormatter = new DataContractJsonSerializer(typeof(IdentificationResults));
-            using (FileStream fs = new FileStream("DataFromAzure.json", FileMode.OpenOrCreate))
+
+            
+
+            using (FileStream fs = new FileStream(userRoot + "\\Pictures\\FromAzure\\DataFromAzure.json", FileMode.OpenOrCreate))
             {
                 jsonFormatter.WriteObject(fs, identificationResults);
             }
 
-            using (FileStream fs = new FileStream("DataFromAzure.json", FileMode.OpenOrCreate))
-            {
-                IdentificationResults dataFromAzure = (IdentificationResults)jsonFormatter.ReadObject(fs);
-            }
+            //using (FileStream fs = new FileStream(userRoot + "\\Pictures\\FromAzure\\DataFromAzure.json", FileMode.OpenOrCreate))
+            //{
+            //    IdentificationResults dataFromAzure = (IdentificationResults)jsonFormatter.ReadObject(fs);
+            //}
 
             return sb.ToString();
         }
@@ -539,15 +549,16 @@ namespace PorterBot
 
         private void AutomaticFace_Click(object sender, RoutedEventArgs e)
         {
-            string filePath = "c://Users//vic//Pictures//CapturedPhoto.jpg";
-            Uri fileUri = new Uri(filePath);
+            //string filePath = "c://Users//vic//Pictures//CapturedPhoto.jpg";
+            fileFromAzure = userRoot + "\\Pictures\\FromCamera\\CapturedPhoto.jpg";
+            Uri fileUri = new Uri(fileFromAzure);
             BitmapImage bitmapSource = new BitmapImage();
             bitmapSource.BeginInit();
             bitmapSource.CacheOption = BitmapCacheOption.None;
             bitmapSource.UriSource = fileUri;
             bitmapSource.EndInit();
             FacePhoto.Source = bitmapSource;
-            UnknownFaceChoosing(filePath);
+            UnknownFaceChoosing(fileFromAzure);
         }
 
 
@@ -556,12 +567,12 @@ namespace PorterBot
             k_NumberOfEvents++;
             if (k_NumberOfEvents == 1)
             {
-                string filePath = "c:\\Users\\vic\\Pictures\\CapturedPhoto.jpg";
+                
                 this.Dispatcher.Invoke(() =>
                 {
                     AutomaticFace_Click(null, null);
                 });
-                filePath = e.FullPath;
+                fileFromAzure = e.FullPath;
             }
         }
 
