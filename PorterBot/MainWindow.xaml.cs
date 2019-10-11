@@ -237,34 +237,59 @@ namespace PorterBot
                 }
             }
 
-            identificationResults.Age = face.FaceAttributes.Age;
+            identificationResults.PorterEmotion = new PorterEmotion();
+            identificationResults.PorterEmotion.Anger = face.FaceAttributes.Emotion.Anger.ToString();
+            identificationResults.PorterEmotion.Contempt = face.FaceAttributes.Emotion.Contempt.ToString();
+            identificationResults.PorterEmotion.Disgust = face.FaceAttributes.Emotion.Disgust.ToString();
+            identificationResults.PorterEmotion.Fear = face.FaceAttributes.Emotion.Fear.ToString();
+            identificationResults.PorterEmotion.Happiness = face.FaceAttributes.Emotion.Happiness.ToString();
+            identificationResults.PorterEmotion.Neutral = face.FaceAttributes.Emotion.Neutral.ToString();
+            identificationResults.PorterEmotion.Sadness = face.FaceAttributes.Emotion.Sadness.ToString();
+            identificationResults.PorterEmotion.Surprise = face.FaceAttributes.Emotion.Surprise.ToString();
+
+            identificationResults.Age = Convert.ToString(face.FaceAttributes.Age);
             identificationResults.Blur = Convert.ToString(face.FaceAttributes.Blur);
-            identificationResults.Emotion = Convert.ToString(face.FaceAttributes.Emotion);
             identificationResults.Exposure = Convert.ToString(face.FaceAttributes.Exposure);
-            identificationResults.FacialHair = Convert.ToString(face.FaceAttributes.FacialHair);
+            identificationResults.FacialHair = new FacialHair();
+            identificationResults.FacialHair.Beard = face.FaceAttributes.FacialHair.Beard.ToString();
+            identificationResults.FacialHair.Sideburns = face.FaceAttributes.FacialHair.Sideburns.ToString();
+            identificationResults.FacialHair.Moustache = face.FaceAttributes.FacialHair.Moustache.ToString();
+
+
+
             identificationResults.Gender = Convert.ToString(face.FaceAttributes.Gender);
             identificationResults.Glasses = Convert.ToString(face.FaceAttributes.Glasses);
-            identificationResults.Hair = Convert.ToString(face.FaceAttributes.Hair);
-            identificationResults.HeadPose = Convert.ToDouble(face.FaceAttributes.HeadPose);
+            
+            identificationResults.Hair = new Hair();
+            identificationResults.Hair.Bald = Convert.ToString(face.FaceAttributes.Hair.Bald);
+            identificationResults.Hair.Invisible = Convert.ToString(face.FaceAttributes.Hair.Invisible);
+            identificationResults.Hair.HairColor = new PorterHairColor();
+
+            int i = 0;
+            foreach (HairColor hairColor in hairColors)
+            {
+                if (hairColor.Confidence >= 0.1f)
+                {
+                    identificationResults.Hair.HairColor.ColorCofidence[i++] = "{" + hairColor.Color.ToString() + "," + (hairColor.Confidence * 100) + "}";
+                }
+            }
+
+            identificationResults.HeadPose = Convert.ToString(face.FaceAttributes.HeadPose);
             identificationResults.Makeup = Convert.ToString(face.FaceAttributes.Makeup);
             identificationResults.Noise = Convert.ToString(face.FaceAttributes.Noise);
             identificationResults.Occlusion = Convert.ToString(face.FaceAttributes.Occlusion);
-            identificationResults.Smile = Convert.ToDouble(face.FaceAttributes.Smile);
+            identificationResults.Smile = Convert.ToString(face.FaceAttributes.Smile);
 
             DataContractJsonSerializer jsonFormatter = new DataContractJsonSerializer(typeof(IdentificationResults));
-
-            
 
             using (FileStream fs = new FileStream(userRoot + "\\Pictures\\FromAzure\\DataFromAzure.json", FileMode.OpenOrCreate))
             {
                 jsonFormatter.WriteObject(fs, identificationResults);
             }
-
             //using (FileStream fs = new FileStream(userRoot + "\\Pictures\\FromAzure\\DataFromAzure.json", FileMode.OpenOrCreate))
             //{
             //    IdentificationResults dataFromAzure = (IdentificationResults)jsonFormatter.ReadObject(fs);
             //}
-
             return sb.ToString();
         }
 
