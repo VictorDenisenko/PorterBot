@@ -282,7 +282,7 @@ namespace PorterBot
 
             DataContractJsonSerializer jsonFormatter = new DataContractJsonSerializer(typeof(IdentificationResults));
 
-            using (FileStream fs = new FileStream(userRoot + "\\Pictures\\DataFromAzure.json", FileMode.OpenOrCreate))
+            using (FileStream fs = new FileStream(userRoot + "\\Pictures\\DataFromAzure.json", FileMode.Create))
             {
                 jsonFormatter.WriteObject(fs, identificationResults);
             }
@@ -577,14 +577,8 @@ namespace PorterBot
         {
             try
             {
-                Thread.Sleep(1000);
-
+                Thread.Sleep(100);
                 fileFromCamera = userRoot + "\\Pictures\\CapturedPhoto.jpg";
-
-                //while (IsLocked(fileFromCamera))
-                //{
-
-                //}
 
                 Uri fileUri = new Uri(fileFromCamera);
                 BitmapImage bitmapSource = new BitmapImage();
