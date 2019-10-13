@@ -186,6 +186,7 @@ namespace PorterBot
                 using (Stream imageFileStream = File.OpenRead(imageFilePath))
                 {
                     IList<DetectedFace> faceList = await faceClient.Face.DetectWithStreamAsync(imageFileStream, true, false, faceAttributes);
+                    imageFileStream.Close();
                     return faceList;
                 }
             }
@@ -525,6 +526,7 @@ namespace PorterBot
                     using (Stream imageFileStream = File.OpenRead(filePath))
                     {
                         faceList = await faceClient.Face.DetectWithStreamAsync(imageFileStream, true, false, faceAttributes);
+                        imageFileStream.Close();
                     }
                 }
                 catch (APIErrorException f)
@@ -576,28 +578,50 @@ namespace PorterBot
             try
             {
                 fileFromCamera = userRoot + "\\Pictures\\CapturedPhoto.jpg";
+                MemoryMappedViewStream stream = null;
+                Uri fileUri = new Uri(fileFromCamera);
+                BitmapImage bitmapSource = new BitmapImage();
+                bitmapSource.BeginInit();
+                bitmapSource.CacheOption = BitmapCacheOption.OnLoad;//закрывает поток после создания изображения.
+                bitmapSource.UriSource = fileUri;
+                bitmapSource.EndInit();
+                FacePhoto.Source = bitmapSource;
+                //UnknownFaceChoosing(fileFromCamera);
+                _ = UploadAndDetectFaces(fileFromCamera);
+            }
+            catch(Exception ex)
+            { 
+            }
+        }
+
+        private void AutomaticFace_Click_1(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                fileFromCamera = userRoot + "\\Pictures\\CapturedPhoto.jpg";
 
                 //MemoryMappedFile mmf = MemoryMappedFile.CreateFromFile(fileFromCamera, FileMode.Open, "ImgInMemory");
                 MemoryMappedViewStream stream = null;
                 //stream = mmf.CreateViewStream();
-                //Stream imageFileStream = File.OpenRead(fileFromCamera);
-                Stream imageFileStream = (Stream)stream;
+                Stream imageFileStream = File.OpenRead(fileFromCamera);
+                //Stream imageFileStream = (Stream)stream;
 
-                //Uri fileUri = new Uri(fileFromCamera);
+                Uri fileUri = new Uri(fileFromCamera);
                 BitmapImage bitmapSource = new BitmapImage();
                 bitmapSource.BeginInit();
                 bitmapSource.CacheOption = BitmapCacheOption.OnLoad;//закрывает поток после создания изображения.
-                //bitmapSource.UriSource = fileUri;
-                
-                bitmapSource.StreamSource = imageFileStream;
-                //bitmapSource.EndInit();
-                FacePhoto.Source = bitmapSource;
+                bitmapSource.UriSource = fileUri;
 
-                //UnknownFaceChoosing(fileFromCamera);
-                //_ = UploadAndDetectFaces(fileFromCamera);
+                //bitmapSource.StreamSource = imageFileStream;
+                bitmapSource.EndInit();
+                FacePhoto.Source = bitmapSource;
+                //bitmapSource.StreamSource.Close();
+
+                UnknownFaceChoosing(fileFromCamera);
+                _ = UploadAndDetectFaces(fileFromCamera);
             }
-            catch(Exception ex)
-            { 
+            catch (Exception ex)
+            {
             }
         }
 
@@ -627,7 +651,7 @@ namespace PorterBot
             {
                 this.Dispatcher.Invoke(() =>
                 {
-                    AutomaticFace_Click(null, null);
+                    //AutomaticFace_Click(null, null);
                 });
                 fileFromCamera = e.FullPath;
             }
