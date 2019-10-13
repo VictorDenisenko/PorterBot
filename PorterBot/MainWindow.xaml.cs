@@ -577,8 +577,15 @@ namespace PorterBot
         {
             try
             {
+                Thread.Sleep(1000);
+
                 fileFromCamera = userRoot + "\\Pictures\\CapturedPhoto.jpg";
-                MemoryMappedViewStream stream = null;
+
+                //while (IsLocked(fileFromCamera))
+                //{
+
+                //}
+
                 Uri fileUri = new Uri(fileFromCamera);
                 BitmapImage bitmapSource = new BitmapImage();
                 bitmapSource.BeginInit();
@@ -586,8 +593,18 @@ namespace PorterBot
                 bitmapSource.UriSource = fileUri;
                 bitmapSource.EndInit();
                 FacePhoto.Source = bitmapSource;
-                //UnknownFaceChoosing(fileFromCamera);
+
+                UnknownFaceChoosing(fileFromCamera);
                 _ = UploadAndDetectFaces(fileFromCamera);
+
+                Task t = new Task(async () =>
+                {
+                    await this.Dispatcher.Invoke(async () =>
+                     {
+                         await FaceEmotion(fileFromCamera, bitmapSource);
+                     });
+                });
+                t.Start();
             }
             catch(Exception ex)
             { 
@@ -599,6 +616,8 @@ namespace PorterBot
             try
             {
                 fileFromCamera = userRoot + "\\Pictures\\CapturedPhoto.jpg";
+
+                IsLocked(fileFromCamera);
 
                 //MemoryMappedFile mmf = MemoryMappedFile.CreateFromFile(fileFromCamera, FileMode.Open, "ImgInMemory");
                 MemoryMappedViewStream stream = null;
@@ -629,7 +648,7 @@ namespace PorterBot
         {
             try
             {
-                using (FileStream fs = File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.None))
+                using (FileStream fs = File.Open(fileName, FileMode.Open, FileAccess.Write, FileShare.None))
                 {
                     fs.Close();
                     // Çהוסü גûחûגאול סגמי לועמה, נאבמעאול ס פאיכמל
@@ -651,7 +670,7 @@ namespace PorterBot
             {
                 this.Dispatcher.Invoke(() =>
                 {
-                    //AutomaticFace_Click(null, null);
+                    AutomaticFace_Click(null, null);
                 });
                 fileFromCamera = e.FullPath;
             }
