@@ -15,6 +15,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Runtime.Serialization.Json;
 using System.Runtime.Serialization;
+using System.IO.MemoryMappedFiles;
 
 namespace PorterBot
 {
@@ -34,7 +35,7 @@ namespace PorterBot
         private int k_NumberOfEvents = 0;
         IdentificationResults identificationResults = null;
         public string userRoot = "";
-        public string fileFromAzure = "";
+        public string fileFromCamera = "";
 
         public MainWindow()
         {
@@ -58,12 +59,12 @@ namespace PorterBot
                 //    | NotifyFilters.FileName | NotifyFilters.DirectoryName;
 
                 userRoot = System.Environment.GetEnvironmentVariable("USERPROFILE");
-                fileFromAzure = "c:\\Users\\vic\\Pictures\\FromCamera\\CapturedPhoto.jpg";
+                fileFromCamera = "c:\\Users\\vic\\Pictures\\CapturedPhoto.jpg";
                 //System.Windows.Resources.StreamResourceInfo res = Application.GetResourceStream(new Uri("Users", UriKind.RelativeOrAbsolute));
 
 
                 //FileSystemWatcher fsw = new FileSystemWatcher("c:\\Users\\vic\\Pictures\\");
-                FileSystemWatcher fsw = new FileSystemWatcher(userRoot + "\\Pictures\\FromCamera\\");
+                FileSystemWatcher fsw = new FileSystemWatcher(userRoot + "\\Pictures\\");
                 fsw.NotifyFilter = NotifyFilters.LastWrite;
 
                 fsw.Changed += Fsw_Changed;
@@ -255,8 +256,6 @@ namespace PorterBot
             identificationResults.FacialHair.Sideburns = face.FaceAttributes.FacialHair.Sideburns.ToString();
             identificationResults.FacialHair.Moustache = face.FaceAttributes.FacialHair.Moustache.ToString();
 
-
-
             identificationResults.Gender = Convert.ToString(face.FaceAttributes.Gender);
             identificationResults.Glasses = Convert.ToString(face.FaceAttributes.Glasses);
             
@@ -270,7 +269,7 @@ namespace PorterBot
             {
                 if (hairColor.Confidence >= 0.1f)
                 {
-                    identificationResults.Hair.HairColor.ColorCofidence[i++] = "{" + hairColor.Color.ToString() + "," + (hairColor.Confidence * 100) + "}";
+                    identificationResults.Hair.HairColor.ColorConfidence[i++] = "{" + hairColor.Color.ToString() + "," + (hairColor.Confidence * 100) + "}";
                 }
             }
 
@@ -282,11 +281,11 @@ namespace PorterBot
 
             DataContractJsonSerializer jsonFormatter = new DataContractJsonSerializer(typeof(IdentificationResults));
 
-            using (FileStream fs = new FileStream(userRoot + "\\Pictures\\FromAzure\\DataFromAzure.json", FileMode.OpenOrCreate))
+            using (FileStream fs = new FileStream(userRoot + "\\Pictures\\DataFromAzure.json", FileMode.OpenOrCreate))
             {
                 jsonFormatter.WriteObject(fs, identificationResults);
             }
-            //using (FileStream fs = new FileStream(userRoot + "\\Pictures\\FromAzure\\DataFromAzure.json", FileMode.OpenOrCreate))
+            //using (FileStream fs = new FileStream(userRoot + "\\Pictures\\DataFromAzure.json", FileMode.OpenOrCreate))
             //{
             //    IdentificationResults dataFromAzure = (IdentificationResults)jsonFormatter.ReadObject(fs);
             //}
@@ -536,17 +535,17 @@ namespace PorterBot
                 {
                     faceDescriptionStatusBar.Text = e2.Message;
                 }
-             
-                IList<Guid> faceIds = new Guid[faceList.Count]; 
-                for (int i = 0; i< faceList.Count; i++)
-                {
-                    Guid defaultId = Guid.NewGuid();
-                    faceIds[i] = faceList[i].FaceId.Value;
-                    defaultId = faceList[i].FaceId.Value;
-                }
 
                 try
                 {
+                    IList<Guid> faceIds = new Guid[faceList.Count]; 
+                    for (int i = 0; i< faceList.Count; i++)
+                    {
+                        Guid defaultId = Guid.NewGuid();
+                        faceIds[i] = faceList[i].FaceId.Value;
+                        defaultId = faceList[i].FaceId.Value;
+                    }
+                
                     var results = await faceClient.Face.IdentifyAsync(faceIds, personGroupId);
                     foreach (var identifyResult in results)
                     {
@@ -574,30 +573,63 @@ namespace PorterBot
 
         private void AutomaticFace_Click(object sender, RoutedEventArgs e)
         {
-            //string filePath = "c://Users//vic//Pictures//CapturedPhoto.jpg";
-            fileFromAzure = userRoot + "\\Pictures\\FromCamera\\CapturedPhoto.jpg";
-            Uri fileUri = new Uri(fileFromAzure);
-            BitmapImage bitmapSource = new BitmapImage();
-            bitmapSource.BeginInit();
-            bitmapSource.CacheOption = BitmapCacheOption.None;
-            bitmapSource.UriSource = fileUri;
-            bitmapSource.EndInit();
-            FacePhoto.Source = bitmapSource;
-            UnknownFaceChoosing(fileFromAzure);
+            try
+            {
+                fileFromCamera = userRoot + "\\Pictures\\CapturedPhoto.jpg";
+
+                //MemoryMappedFile mmf = MemoryMappedFile.CreateFromFile(fileFromCamera, FileMode.Open, "ImgInMemory");
+                MemoryMappedViewStream stream = null;
+                //stream = mmf.CreateViewStream();
+                //Stream imageFileStream = File.OpenRead(fileFromCamera);
+                Stream imageFileStream = (Stream)stream;
+
+                //Uri fileUri = new Uri(fileFromCamera);
+                BitmapImage bitmapSource = new BitmapImage();
+                bitmapSource.BeginInit();
+                bitmapSource.CacheOption = BitmapCacheOption.OnLoad;//закрывает поток после создания изображения.
+                //bitmapSource.UriSource = fileUri;
+                
+                bitmapSource.StreamSource = imageFileStream;
+                //bitmapSource.EndInit();
+                FacePhoto.Source = bitmapSource;
+
+                //UnknownFaceChoosing(fileFromCamera);
+                //_ = UploadAndDetectFaces(fileFromCamera);
+            }
+            catch(Exception ex)
+            { 
+            }
         }
 
+        public bool IsLocked(string fileName)
+        {
+            try
+            {
+                using (FileStream fs = File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.None))
+                {
+                    fs.Close();
+                    // Здесь вызываем свой метод, работаем с файлом
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                if (ex.HResult == -2147024894)
+                    return false;
+            }
+            return true;
+        }
 
         private void Fsw_Changed(object sender, FileSystemEventArgs e)
         {
             k_NumberOfEvents++;
             if (k_NumberOfEvents == 1)
             {
-                
                 this.Dispatcher.Invoke(() =>
                 {
                     AutomaticFace_Click(null, null);
                 });
-                fileFromAzure = e.FullPath;
+                fileFromCamera = e.FullPath;
             }
         }
 

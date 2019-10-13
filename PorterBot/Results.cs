@@ -64,7 +64,7 @@ namespace PorterBot
 
     public class PorterHairColor
     {
-        public string[] ColorCofidence = new string[6];
+        public string[] ColorConfidence = new string[6];
     }
 
 }
